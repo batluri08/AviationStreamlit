@@ -123,7 +123,7 @@ with tab2:
     st.subheader("🧠 Run Custom SQL")
 
     examples = {
-        "Avg weight of passengers who have atleadt 2 bags": """
+        "Avg weight of passengers who have atleast 2 bags": """
 SELECT 
     p.passenger_id,
     p.first_name,
