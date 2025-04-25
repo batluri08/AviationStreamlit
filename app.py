@@ -37,8 +37,14 @@ plane_animation = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_
 def execute_sql_query(query: str):
     try:
         with SessionLocal() as session:
-            df = pd.read_sql(query, con=session.bind)
-            return df
+            if query.strip().lower().startswith("select"):
+                df = pd.read_sql(query, con=session.bind)
+                return df
+            else:
+                session.execute(text(query))
+                session.commit()
+                st.success("✅ Query executed successfully (no results to display).")
+                return pd.DataFrame()
     except Exception as e:
         st.error(f"SQL Execution Error: {e}")
         return pd.DataFrame()
@@ -79,7 +85,7 @@ with st.sidebar:
     st.markdown("#### ✈️  🛬   ✈️  🛫")
 
 # --- Tabs ---
-tab1, tab2 = st.tabs(["📋 Explore Tables", "🧠 Custom SQL Query"])
+tab1, tab2, tab3 = st.tabs(["📋 Explore Tables", "🧠 Custom SQL Query", "✍️ Modify Data (Insert/Delete)"])
 
 # === TABLE VIEW TAB ===
 with tab1:
@@ -123,35 +129,26 @@ with tab2:
     st.subheader("🧠 Run Custom SQL")
 
     examples = {
-        "Avg weight of passengers who have atleast 2 bags": """
-SELECT 
-    p.passenger_id,
-    p.first_name,
-    p.last_name,
-    COUNT(b.baggage_id) AS num_bags,
-    AVG(b.weight) AS avg_weight
-FROM passengers p
-JOIN baggage b ON p.passenger_id = b.passenger_id
-GROUP BY p.passenger_id, p.first_name, p.last_name
-HAVING COUNT(b.baggage_id) >= 2
-ORDER BY avg_weight DESC
+        "Flights departing from Juliastad": """
+SELECT f.flight_number, dep_city.city_name AS departure_city,
+       arr_city.city_name AS arrival_city,
+       f.departure_time, f.arrival_time
+FROM Flights f
+JOIN Airports dep_airport ON f.departure_airport_id = dep_airport.airport_id
+JOIN Airports arr_airport ON f.arrival_airport_id = arr_airport.airport_id
+JOIN Cities dep_city ON dep_airport.city_id = dep_city.city_id
+JOIN Cities arr_city ON arr_airport.city_id = arr_city.city_id
+WHERE dep_city.city_name = 'Juliastad';
 """,
-        "List of flights with delayed status and weather details at departure": """
-SELECT 
-    f.flight_number,
-    a.airline_name,
-    ap.airport_name AS departure_airport,
-    w.temperature,
-    w.wind_speed,
-    w.precipitation,
-    f.departure_time
-FROM flights f
-JOIN airlines a ON f.airline_id = a.airline_id
-JOIN airports ap ON f.departure_airport_id = ap.airport_id
-JOIN weather w ON f.weather_id = w.weather_id
-WHERE f.flight_status = 'Delayed'
-ORDER BY f.flight_number
-
+        "Passengers flying with Oliver-Barnett Airlines": """
+SELECT p.first_name, p.last_name, t.ticket_class
+FROM Passengers p
+JOIN Tickets t ON p.passenger_id = t.passenger_id
+WHERE t.flight_id IN (
+    SELECT f.flight_id
+    FROM Flights f
+    JOIN Airlines a ON f.airline_id = a.airline_id
+    WHERE a.airline_name = 'Oliver-Barnett'
 );
 """
     }
@@ -208,3 +205,20 @@ ORDER BY f.flight_number
                     st.download_button("🖼 Download Chart", img_bytes, file_name="chart.png", mime="image/png")
                 except Exception as e:
                     st.warning(f"⚠️ Couldn't plot chart: {e}")
+
+# === INSERT/DELETE TAB ===
+with tab3:
+    st.subheader("✍️ Run Insert/Delete SQL Queries")
+
+    st.markdown("You can run raw `INSERT`, `UPDATE`, `DELETE`, or any other SQL command here.")
+    st.warning("⚠️ Be cautious. These actions modify the database directly.")
+
+    modify_query = st.text_area("Enter your Insert/Delete/Update SQL Query:", height=150)
+
+    if st.button("🛠 Run Modify Query"):
+        if modify_query.strip():
+            result_df = execute_sql_query(modify_query)
+            if not result_df.empty:
+                st.dataframe(result_df)
+        else:
+            st.warning("Please enter a valid SQL query.")
