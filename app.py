@@ -78,17 +78,39 @@ st.markdown("---")
 
 # --- Sidebar ---
 with st.sidebar:
+    st.markdown("""
+    <style>
+    .sidebar-title {
+        font-size: 22px !important;
+        font-weight: bold;
+        color: #1f77b4;
+    }
+    </style>
+    <p class='sidebar-title'>🧭 Navigation Menu</p>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <style>
+    .stRadio > div[role='radiogroup'] label {
+        font-size: 18px;
+        font-weight: bold;
+        padding: 6px 4px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    page = st.radio("", ["📋 Explore Tables", "🧠 Custom SQL", "✍️ Insert/Delete"], key="navigation")
+    st.markdown("---")
     st.markdown("### 🕓 Query History")
     for q in st.session_state.query_history[-5:][::-1]:
         st.code(q)
     st.markdown("---")
     st.markdown("#### ✈️  🛬   ✈️  🛫")
 
-# --- Tabs ---
-tab1, tab2, tab3 = st.tabs(["📋 Explore Tables", "🧠 Custom SQL Query", "✍️ Modify Data (Insert/Delete)"])
+# --- Tabs Navigation Replacement ---
 
-# === TABLE VIEW TAB ===
-with tab1:
+
+if page == "📋 Explore Tables":
     st.subheader("📦 Table Viewer")
     table_name = st.selectbox("Select a Table", [
         "countries", "cities", "airlines", "airports", "crew", "flightcrew", 
@@ -124,8 +146,7 @@ with tab1:
         time.sleep(60)
         st.experimental_rerun()
 
-# === SQL QUERY TAB ===
-with tab2:
+elif page == "🧠 Custom SQL":
     st.subheader("🧠 Run Custom SQL")
 
     examples = {
@@ -206,8 +227,14 @@ WHERE t.flight_id IN (
                 except Exception as e:
                     st.warning(f"⚠️ Couldn't plot chart: {e}")
 
-# === INSERT/DELETE TAB ===
-with tab3:
+elif page == "✍️ Insert/Delete":
+    st.subheader("✍️ Run Insert/Delete SQL Queries")
+
+    # --- Simple Password Protection ---
+    password = st.text_input("🔐 Enter admin password to continue:", type="password")
+    if password != st.secrets.get("admin_password", "changeme"):
+        st.warning("Access denied. Please enter the correct password.")
+        st.stop()
     st.subheader("✍️ Run Insert/Delete SQL Queries")
 
     st.markdown("You can run raw `INSERT`, `UPDATE`, `DELETE`, or any other SQL command here.")
