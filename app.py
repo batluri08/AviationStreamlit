@@ -123,26 +123,35 @@ with tab2:
     st.subheader("🧠 Run Custom SQL")
 
     examples = {
-        "Flights departing from Juliastad": """
-SELECT f.flight_number, dep_city.city_name AS departure_city,
-       arr_city.city_name AS arrival_city,
-       f.departure_time, f.arrival_time
-FROM Flights f
-JOIN Airports dep_airport ON f.departure_airport_id = dep_airport.airport_id
-JOIN Airports arr_airport ON f.arrival_airport_id = arr_airport.airport_id
-JOIN Cities dep_city ON dep_airport.city_id = dep_city.city_id
-JOIN Cities arr_city ON arr_airport.city_id = arr_city.city_id
-WHERE dep_city.city_name = 'Juliastad';
+        "Avg weight of passengers who have atleadt 2 bags": """
+SELECT 
+    p.passenger_id,
+    p.first_name,
+    p.last_name,
+    COUNT(b.baggage_id) AS num_bags,
+    AVG(b.weight) AS avg_weight
+FROM passengers p
+JOIN baggage b ON p.passenger_id = b.passenger_id
+GROUP BY p.passenger_id, p.first_name, p.last_name
+HAVING COUNT(b.baggage_id) >= 2
+ORDER BY avg_weight DESC
 """,
-        "Passengers flying with Oliver-Barnett Airlines": """
-SELECT p.first_name, p.last_name, t.ticket_class
-FROM Passengers p
-JOIN Tickets t ON p.passenger_id = t.passenger_id
-WHERE t.flight_id IN (
-    SELECT f.flight_id
-    FROM Flights f
-    JOIN Airlines a ON f.airline_id = a.airline_id
-    WHERE a.airline_name = 'Oliver-Barnett'
+        "List of flights with delayed status and weather details at departure": """
+SELECT 
+    f.flight_number,
+    a.airline_name,
+    ap.airport_name AS departure_airport,
+    w.temperature,
+    w.wind_speed,
+    w.precipitation,
+    f.departure_time
+FROM flights f
+JOIN airlines a ON f.airline_id = a.airline_id
+JOIN airports ap ON f.departure_airport_id = ap.airport_id
+JOIN weather w ON f.weather_id = w.weather_id
+WHERE f.flight_status = 'Delayed'
+ORDER BY f.flight_number
+
 );
 """
     }
