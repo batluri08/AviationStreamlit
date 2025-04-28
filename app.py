@@ -149,7 +149,7 @@ if page == "📋 Explore Tables":
 elif page == "🧠 Custom SQL":
     st.subheader("🧠 Run Custom SQL")
     examples = {
-"Top 5 Longest Flights and Their Fuel Usage": """
+"Longest Flights and Their Fuel Usage": """
 SELECT 
     f.flight_number, 
     a.airline_name, 
