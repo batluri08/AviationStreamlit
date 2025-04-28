@@ -148,32 +148,29 @@ if page == "📋 Explore Tables":
 
 elif page == "🧠 Custom SQL":
     st.subheader("🧠 Run Custom SQL")
-
     examples = {
-        "Flights departing from Juliastad": """
-SELECT f.flight_number, dep_city.city_name AS departure_city,
-       arr_city.city_name AS arrival_city,
-       f.departure_time, f.arrival_time
-FROM Flights f
-JOIN Airports dep_airport ON f.departure_airport_id = dep_airport.airport_id
-JOIN Airports arr_airport ON f.arrival_airport_id = arr_airport.airport_id
-JOIN Cities dep_city ON dep_airport.city_id = dep_city.city_id
-JOIN Cities arr_city ON arr_airport.city_id = arr_city.city_id
-WHERE dep_city.city_name = 'Juliastad';
-""",
-        "Passengers flying with Oliver-Barnett Airlines": """
-SELECT p.first_name, p.last_name, t.ticket_class
-FROM Passengers p
-JOIN Tickets t ON p.passenger_id = t.passenger_id
-WHERE t.flight_id IN (
-    SELECT f.flight_id
-    FROM Flights f
-    JOIN Airlines a ON f.airline_id = a.airline_id
-    WHERE a.airline_name = 'Oliver-Barnett'
-);
+"Top 5 Longest Flights and Their Fuel Usage": """
+SELECT 
+    f.flight_number, 
+    a.airline_name, 
+    ac.model AS aircraft_model, 
+    ap_from.airport_name AS departure_airport, 
+    ap_to.airport_name AS arrival_airport, 
+    r.distance_km, 
+    fc.fuel_used_liters, 
+    ROUND((fc.fuel_used_liters / r.distance_km)::numeric, 2) AS liters_per_km, -- ✅ FIXED
+    f.departure_time, 
+    f.arrival_time 
+FROM 
+    flights f 
+JOIN airlines a ON f.airline_id = a.airline_id 
+JOIN aircraft ac ON f.aircraft_id = ac.aircraft_id 
+JOIN airports ap_from ON f.departure_airport_id = ap_from.airport_id 
+JOIN airports ap_to ON f.arrival_airport_id = ap_to.airport_id 
+JOIN routes r ON f.route_id = r.route_id
+JOIN fuelconsumption fc ON f.flight_id = fc.flight_id;
 """
     }
-
     example_key = st.selectbox("📚 Example Queries", list(examples.keys()))
     if st.button("🔎 Load Example"):
         st.session_state.example_query = examples[example_key]
